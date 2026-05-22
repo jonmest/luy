@@ -21,14 +21,14 @@ pub enum Query {
 
 #[derive(Clone, Debug)]
 pub struct Pattern {
-    kind: Kind,
-    filters: Vec<Filter>,
+    pub kind: Kind,
+    pub filters: Vec<Filter>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Filter {
-    field: String,
-    predicate: Predicate,
+    pub field: String,
+    pub predicate: Predicate,
 }
 
 #[derive(Clone, Debug)]
@@ -36,7 +36,12 @@ pub enum Predicate {
     Eq(String),
     Like(String),
     Matches(String),
-    Contains(Box<Pattern>),
+
+    Any(Box<Predicate>),
+    All(Box<Predicate>),
+
+    Grep(String),
+    Regex(String),
 }
 
 pub struct Parser<'source> {
@@ -56,7 +61,6 @@ impl<'source> Parser<'source> {
 
     fn expect(&mut self, expected: Token) -> Result<()> {
         let current = &self.current;
-        println!("{:?}", current);
         match current {
             Some(Ok(token)) if *token == expected => {
                 self.advance();
@@ -69,6 +73,10 @@ impl<'source> Parser<'source> {
 
     pub fn parse_query(&mut self) -> Result<Query> {
         let pattern = self.parse_pattern()?;
+
+        if self.current.is_some() {
+            return Err(anyhow!("unexpected token after query: {:?}", self.current));
+        }
         Ok(Query::Pattern(pattern))
     }
 
@@ -118,13 +126,16 @@ impl<'source> Parser<'source> {
                 self.advance();
                 Ok("name".to_string())
             }
+            Some(Ok(Token::Params)) => {
+                self.advance();
+                Ok("params".to_string())
+            }
             _ => Err(anyhow!("invalid field")),
         }
     }
 
     fn parse_predicate(&mut self) -> Result<Predicate> {
         let current = &self.current;
-        println!("{:?}", current);
         match current {
             Some(Ok(Token::Like)) => {
                 self.advance();
@@ -141,28 +152,32 @@ impl<'source> Parser<'source> {
                 let value = self.parse_value()?;
                 Ok(Predicate::Matches(value))
             }
+            Some(Ok(Token::Any)) => {
+                self.advance();
+                let predicate = self.parse_predicate()?;
+                Ok(Predicate::Any(Box::new(predicate)))
+            }
+            Some(Ok(Token::All)) => {
+                self.advance();
+                let predicate = self.parse_predicate()?;
+                Ok(Predicate::All(Box::new(predicate)))
+            }
+            Some(Ok(Token::Grep)) => {
+                self.advance();
+                let m = self.parse_value()?;
+                Ok(Predicate::Grep(m))
+            }
+            Some(Ok(Token::Regex)) => {
+                self.advance();
+                let regex_string = self.parse_value()?;
+                Ok(Predicate::Regex(regex_string))
+            }
+            Some(t) => Err(anyhow!("expected predicate got {:?}", t)),
             _ => Err(anyhow!("expected predicate")),
         }
     }
 
-    fn parse_quote(&mut self) -> Result<()> {
-        match &self.current {
-            Some(Ok(Token::Quote)) => {
-                self.advance();
-                Ok(())
-            }
-            _ => Err(anyhow!("expected a quote")),
-        }
-    }
-
     fn parse_value(&mut self) -> Result<String> {
-        self.parse_quote()?;
-        let result = self.parse_string();
-        self.parse_quote()?;
-        result
-    }
-
-    fn parse_string(&mut self) -> Result<String> {
         match &self.current {
             Some(Ok(Token::String(value))) => {
                 let value = value.clone();

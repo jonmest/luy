@@ -1,5 +1,9 @@
 use logos::Logos;
 
+fn unquote(s: &str) -> String {
+    s[1..s.len() - 1].to_string()
+}
+
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t\n\f]+")]
 pub enum Token {
@@ -24,11 +28,18 @@ pub enum Token {
     LeftBracket,
     #[token("]")]
     RightBracket,
-    #[token("\"")]
-    #[token("'")]
-    Quote,
     #[token(",")]
     Comma,
+
+    // properties
+    #[token("params")]
+    Params,
+
+    #[token("args")]
+    Args,
+
+    #[token("value")]
+    Value,
 
     #[token("name")]
     Name,
@@ -36,11 +47,31 @@ pub enum Token {
     #[token("=")]
     Equals,
 
+    #[token("not")]
+    Not,
+    #[token("and")]
+    And,
+    #[token("or")]
+    Or,
+
     #[token("matches")]
     Matches,
     #[token("like")]
     Like,
+    #[token("any")]
+    Any,
+    #[token("all")]
+    All,
+    #[token("count")]
+    Count,
+    #[token("contains")]
+    Contains,
+    #[token("grep")]
+    Grep,
+    #[token("regex")]
+    Regex,
 
-    #[regex("[a-zA-Z]+", |lex| lex.slice().to_string())]
+    #[regex(r#""([^"\\]|\\.)*""#, |lex| unquote(lex.slice()))]
+    #[regex(r#"'([^'\\]|\\.)*'"#, |lex| unquote(lex.slice()))]
     String(String),
 }
