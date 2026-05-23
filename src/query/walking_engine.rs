@@ -1,19 +1,23 @@
 use tree_sitter::{Node, Tree};
 
-use crate::parser::{Filter, Kind, Pattern, Predicate, Query};
-
-#[derive(Debug)]
-pub struct Match {
-    pub kind: String,
-    pub start_byte: usize,
-    pub end_byte: usize,
-}
-
-pub trait QueryEngine {
-    fn run(&self, query: &Query, tree: &Tree, source: &str) -> Vec<Match>;
-}
+use crate::{
+    ir::{Filter, Kind, Pattern, Predicate, Query},
+    query::query_engine::{Match, QueryEngine},
+};
 
 pub struct WalkingEngine {}
+
+impl QueryEngine for WalkingEngine {
+    fn run(&self, query: &Query, tree: &Tree, source: &str) -> Vec<Match> {
+        let mut out = Vec::new();
+        let root = tree.root_node();
+
+        collect_matches(query, root, source, &mut out);
+
+        out
+    }
+}
+
 fn eval_query(query: &Query, node: Node, source: &str) -> bool {
     match query {
         Query::Pattern(pattern) => matches_pattern(pattern, node, source),
@@ -92,16 +96,5 @@ fn collect_matches(query: &Query, node: Node, source: &str, out: &mut Vec<Match>
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         collect_matches(query, child, source, out);
-    }
-}
-
-impl QueryEngine for WalkingEngine {
-    fn run(&self, query: &Query, tree: &Tree, source: &str) -> Vec<Match> {
-        let mut out = Vec::new();
-        let root = tree.root_node();
-
-        collect_matches(query, root, source, &mut out);
-
-        out
     }
 }

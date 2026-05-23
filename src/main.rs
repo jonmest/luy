@@ -1,4 +1,4 @@
-mod core;
+mod ir;
 mod lexer;
 mod parser;
 mod query;
