@@ -67,8 +67,13 @@ fn main() -> Result<()> {
         let matches = engine.run(&query, &tree, &source);
 
         for m in matches {
-            let span = &source[m.start_byte..m.end_byte];
-            println!("{:?}", span);
+            println!(
+                "{}:{}:{}\n{}",
+                path.canonicalize()?.display(),
+                m.start_row,
+                m.start_col,
+                m.text
+            );
         }
     }
 

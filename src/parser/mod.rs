@@ -46,9 +46,9 @@ impl<'source> Parser<'source> {
 
     fn parse_pattern(&mut self) -> Result<Pattern> {
         let kind = self.parse_kind()?;
-        self.expect(Token::LeftBracket)?;
+        self.expect(Token::LeftBrace)?;
         let filters = self.parse_filters()?;
-        self.expect(Token::RightBracket)?;
+        self.expect(Token::RightBrace)?;
         Ok(Pattern { kind, filters })
     }
 
@@ -63,15 +63,23 @@ impl<'source> Parser<'source> {
         }
     }
 
+    fn consume_separators(&mut self) {
+        while matches!(
+            self.current,
+            Some(Ok(Token::Comma)) | Some(Ok(Token::Newline))
+        ) {
+            self.advance();
+        }
+    }
+
     fn parse_filters(&mut self) -> Result<Vec<Filter>> {
         let mut filters = Vec::new();
-        while !matches!(self.current, Some(Ok(Token::RightBracket))) {
+
+        self.consume_separators();
+
+        while !matches!(self.current, Some(Ok(Token::RightBrace))) {
             filters.push(self.parse_filter()?);
-            if matches!(self.current, Some(Ok(Token::Comma))) {
-                self.advance();
-            } else {
-                break;
-            }
+            self.consume_separators();
         }
 
         Ok(filters)

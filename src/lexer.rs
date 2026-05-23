@@ -5,7 +5,7 @@ fn unquote(s: &str) -> String {
 }
 
 #[derive(Logos, Debug, PartialEq)]
-#[logos(skip r"[ \t\n\f]+")]
+#[logos(skip r"[ \t\f]+")]
 pub enum Token {
     // entities
     #[token("fn")]
@@ -24,12 +24,14 @@ pub enum Token {
     Before,
 
     // symbols
-    #[token("[")]
-    LeftBracket,
-    #[token("]")]
-    RightBracket,
+    #[token("{")]
+    LeftBrace,
+    #[token("}")]
+    RightBrace,
     #[token(",")]
     Comma,
+    #[regex(r"\r?\n")]
+    Newline,
 
     // properties
     #[token("params")]

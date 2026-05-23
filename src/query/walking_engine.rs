@@ -90,6 +90,9 @@ fn collect_matches(query: &Query, node: Node, source: &str, out: &mut Vec<Match>
             kind: node.kind().to_string(),
             start_byte: node.start_byte(),
             end_byte: node.end_byte(),
+            start_row: node.start_position().row,
+            start_col: node.start_position().column,
+            text: source[node.start_byte()..node.end_byte()].to_string(),
         });
     }
 

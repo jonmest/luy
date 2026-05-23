@@ -29,6 +29,9 @@ pub struct Match {
     pub kind: String,
     pub start_byte: usize,
     pub end_byte: usize,
+    pub start_row: usize,
+    pub start_col: usize,
+    pub text: String,
 }
 
 pub trait QueryEngine {
