@@ -14,6 +14,14 @@ pub enum Kind {
 }
 
 #[derive(Clone, Debug)]
+pub enum Field {
+    Name,
+    Body,
+    Param,
+    Arg,
+}
+
+#[derive(Clone, Debug)]
 pub enum Query {
     Pattern(Pattern),
     Not(Box<Query>),
@@ -31,7 +39,7 @@ pub struct Pattern {
 
 #[derive(Clone, Debug)]
 pub struct Filter {
-    pub field: String,
+    pub field: Field,
     pub predicate: Predicate,
 }
 

@@ -1,5 +1,6 @@
 #![allow(unused)]
 
+use logos::Span;
 /**
 *
 * QueryEngine is the interface to implement for taking a query in LIR

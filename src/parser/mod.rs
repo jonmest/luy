@@ -1,7 +1,8 @@
 #![allow(unused)]
+pub mod parser_pool;
 
 use crate::{
-    ir::{Filter, Kind, Pattern, Predicate, Query},
+    ir::{Field, Filter, Kind, Pattern, Predicate, Query},
     lexer::Token,
 };
 use anyhow::{Error, Result, anyhow};
@@ -83,15 +84,19 @@ impl<'source> Parser<'source> {
         Ok(Filter { field, predicate })
     }
 
-    fn parse_field(&mut self) -> Result<String> {
+    fn parse_field(&mut self) -> Result<Field> {
         match &self.current {
             Some(Ok(Token::Name)) => {
                 self.advance();
-                Ok("name".to_string())
+                Ok(Field::Name)
             }
             Some(Ok(Token::Params)) => {
                 self.advance();
-                Ok("params".to_string())
+                Ok(Field::Param)
+            }
+            Some(Ok(Token::Body)) => {
+                self.advance();
+                Ok(Field::Body)
             }
             _ => Err(anyhow!("invalid field")),
         }

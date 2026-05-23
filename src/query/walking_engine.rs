@@ -1,7 +1,7 @@
 use tree_sitter::{Node, Tree};
 
 use crate::{
-    ir::{Filter, Kind, Pattern, Predicate, Query},
+    ir::{Field, Filter, Kind, Pattern, Predicate, Query},
     query::query_engine::{Match, QueryEngine},
 };
 
@@ -47,11 +47,11 @@ fn matches_kind(kind: &Kind, node: Node) -> bool {
     }
 }
 
-fn get_field_text(node: Node, field: &str, source: &str) -> Option<String> {
+fn get_field_text(node: Node, field: &Field, source: &str) -> Option<String> {
     let child = match field {
-        "name" => node.child_by_field_name("name"),
-        "params" => node.child_by_field_name("parameters"),
-        "body" => node.child_by_field_name("body"),
+        Field::Name => node.child_by_field_name("name"),
+        Field::Param => node.child_by_field_name("parameters"),
+        Field::Body => node.child_by_field_name("body"),
         _ => None,
     }?;
 

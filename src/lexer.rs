@@ -44,6 +44,9 @@ pub enum Token {
     #[token("name")]
     Name,
 
+    #[token("body")]
+    Body,
+
     #[token("=")]
     Equals,
 
