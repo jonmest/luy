@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 /**
-* Behold, the Luy Intermediary Representation (LIR).
+* Behold, the Luy Intermediate Representation (LIR).
 * Luy takes a user's query and converts it into LIR
 * which is then piped to the query engine.
 */
@@ -15,9 +15,10 @@ pub enum Kind {
 
 #[derive(Clone, Debug)]
 pub enum Field {
+    Self_,
     Name,
     Body,
-    Param,
+    Params,
     Arg,
 }
 
@@ -55,7 +56,5 @@ pub enum Predicate {
     Matches(String),
     ContainsText(ContainsText),
     ContainsPattern(Box<Pattern>),
-
-    Any(Box<Predicate>),
     All(Box<Predicate>),
 }

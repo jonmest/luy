@@ -1,4 +1,4 @@
-use tree_sitter::{Node, Tree, TreeCursor};
+use tree_sitter::{Node, Tree};
 
 use crate::{
     ir::{Field, Filter, Kind, Pattern, Predicate, Query},
@@ -19,15 +19,12 @@ impl QueryEngine for WalkingEngine {
 }
 
 pub struct QueryContext<'a> {
-    node: &'a Node<'a>,
+    node: Node<'a>,
     source: &'a str,
 }
 
 fn eval_query(query: &Query, node: Node, source: &str) -> bool {
-    let ctx = QueryContext {
-        node: &node,
-        source,
-    };
+    let ctx = QueryContext { node, source };
     match query {
         Query::Pattern(pattern) => matches_pattern(pattern, &ctx),
         _ => todo!(),
@@ -35,7 +32,7 @@ fn eval_query(query: &Query, node: Node, source: &str) -> bool {
 }
 
 fn matches_pattern(pattern: &Pattern, ctx: &QueryContext) -> bool {
-    if !matches_kind(&pattern.kind, *ctx.node) {
+    if !matches_kind(&pattern.kind, ctx.node) {
         return false;
     }
     pattern
@@ -57,56 +54,81 @@ fn matches_kind(kind: &Kind, node: Node) -> bool {
     }
 }
 
-fn get_field_text(node: Node, field: &Field, source: &str) -> Option<String> {
-    let child = match field {
-        Field::Name => node.child_by_field_name("name"),
-        Field::Param => node.child_by_field_name("parameters"),
-        Field::Body => node.child_by_field_name("body"),
-        _ => None,
-    }?;
+fn get_kind(node: &Node) -> Option<Kind> {
+    match node.kind() {
+        "function_item" => Some(Kind::Function),
+        "function" => Some(Kind::Function),
+        "function_definition" => Some(Kind::Function),
+        "function_declaration" => Some(Kind::Function),
 
-    child.utf8_text(source.as_bytes()).ok().map(str::to_string)
+        "let_declaration" => Some(Kind::Var),
+        "variable_declarator" => Some(Kind::Var),
+
+        "comment" => Some(Kind::Comment),
+        _ => None,
+    }
+}
+
+fn get_node_text(node: &Node, source: &str) -> Option<String> {
+    node.utf8_text(source.as_bytes()).ok().map(str::to_string)
+}
+
+fn get_field_node<'tree>(node: Node<'tree>, field: &Field) -> Option<Node<'tree>> {
+    match field {
+        Field::Name => node.child_by_field_name("name"),
+        Field::Params => node.child_by_field_name("parameters"),
+        Field::Body => node.child_by_field_name("body"),
+        Field::Self_ => Some(node),
+        _ => None,
+    }
 }
 
 fn matches_filter(filter: &Filter, ctx: &QueryContext) -> bool {
-    let Some(text) = get_field_text(*ctx.node, &filter.field, ctx.source) else {
+    let Some(field_node) = get_field_node(ctx.node, &filter.field) else {
         return false;
     };
 
-    matches_predicate(&filter.predicate, &text, ctx)
+    matches_predicate(&filter.predicate, field_node, ctx)
 }
 
-fn matches_predicate(predicate: &Predicate, text: &str, ctx: &QueryContext) -> bool {
+fn contains_pattern(node: Node, pattern: &Pattern, source: &str) -> bool {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        let child_ctx = QueryContext {
+            node: child,
+            source,
+        };
+        if matches_pattern(pattern, &child_ctx) {
+            return true;
+        }
+        if contains_pattern(child, pattern, source) {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn contains_text(node: &Node, expected: &str, ctx: &QueryContext) -> bool {
+    let Some(text) = get_node_text(node, ctx.source) else {
+        return false;
+    };
+    text.contains(expected)
+}
+
+fn matches_predicate(predicate: &Predicate, node: Node, ctx: &QueryContext) -> bool {
+    let Some(text) = get_node_text(&node, ctx.source) else {
+        return false;
+    };
+
     match predicate {
-        Predicate::Eq(value) => text == value,
-        Predicate::ContainsText(value) => {
-            println!("Actual {} expcted {}", text, value.text);
-            text.contains(&value.text)
-        }
-        Predicate::ContainsPattern(pattern) => {
-            let mut cursor = ctx.node.walk();
-            ctx.node.children(&mut cursor).any(|c| {
-                /* println!(
-                    "Node {:?},\n pattern {:?}\n {:?}\n\n",
-                    &ctx.source[c.start_byte()..c.end_byte()],
-                    pattern,
-                    c.kind()
-                ); */
-                let sub_ctx = QueryContext {
-                    node: &c,
-                    source: ctx.source,
-                };
-                matches_pattern(pattern, &sub_ctx)
-            })
-        }
+        Predicate::Eq(value) => &text == value,
+        Predicate::ContainsText(value) => text.contains(&value.text),
+        Predicate::ContainsPattern(pattern) => contains_pattern(node, pattern, ctx.source),
         Predicate::Matches(_) => todo!("regex crate"),
-        Predicate::Any(inner) => {
-            // later: apply inner to children/items inside a field
-            matches_predicate(inner, text, ctx)
-        }
         Predicate::All(inner) => {
             // later
-            matches_predicate(inner, text, ctx)
+            matches_predicate(inner, node, ctx)
         }
     }
 }

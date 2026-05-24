@@ -13,6 +13,11 @@ enum ParsedValue {
     Pattern(Pattern),
 }
 
+enum FieldParsingError {
+    NotField,
+    InvalidToken,
+}
+
 pub struct Parser<'source> {
     lexer: logos::Lexer<'source, Token>,
     current: Option<Result<Token, ()>>,
@@ -64,6 +69,10 @@ impl<'source> Parser<'source> {
                 self.advance();
                 Ok(Kind::Function)
             }
+            Some(Ok(Token::Comment)) => {
+                self.advance();
+                Ok(Kind::Comment)
+            }
             _ => Err(anyhow!("invalid kind")),
         }
     }
@@ -91,13 +100,17 @@ impl<'source> Parser<'source> {
     }
 
     fn parse_filter(&mut self) -> Result<Filter> {
-        let field = self.parse_field()?;
+        let field = match self.parse_field() {
+            Ok(field) => Ok(field),
+            Err(FieldParsingError::NotField) => Ok(Field::Self_),
+            Err(_) => Err(anyhow!("Failed to parse field")),
+        }?;
         let predicate = self.parse_predicate()?;
 
         Ok(Filter { field, predicate })
     }
 
-    fn parse_field(&mut self) -> Result<Field> {
+    fn parse_field(&mut self) -> Result<Field, FieldParsingError> {
         match &self.current {
             Some(Ok(Token::Name)) => {
                 self.advance();
@@ -105,14 +118,14 @@ impl<'source> Parser<'source> {
             }
             Some(Ok(Token::Params)) => {
                 self.advance();
-                Ok(Field::Param)
+                Ok(Field::Params)
             }
             Some(Ok(Token::Body)) => {
                 self.advance();
                 Ok(Field::Body)
             }
-            Some(Ok(token)) => Err(anyhow!("invalid field {:?}", token)),
-            _ => Err(anyhow!("invalid field")),
+            Some(Ok(token)) => Err(FieldParsingError::NotField),
+            _ => Err(FieldParsingError::InvalidToken),
         }
     }
 
@@ -132,11 +145,6 @@ impl<'source> Parser<'source> {
                     ParsedValue::String(value) => Ok(Predicate::Matches(value)),
                     _ => Err(anyhow!("equals operator expects string value")),
                 }
-            }
-            Some(Ok(Token::Any)) => {
-                self.advance();
-                let predicate = self.parse_predicate()?;
-                Ok(Predicate::Any(Box::new(predicate)))
             }
             Some(Ok(Token::All)) => {
                 self.advance();
