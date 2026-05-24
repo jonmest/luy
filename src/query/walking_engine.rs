@@ -1,4 +1,4 @@
-use tree_sitter::{Node, Tree};
+use tree_sitter::{Node, Tree, TreeCursor};
 
 use crate::{
     ir::{Field, Filter, Kind, Pattern, Predicate, Query},
@@ -18,27 +18,37 @@ impl QueryEngine for WalkingEngine {
     }
 }
 
+pub struct QueryContext<'a> {
+    node: &'a Node<'a>,
+    source: &'a str,
+}
+
 fn eval_query(query: &Query, node: Node, source: &str) -> bool {
+    let ctx = QueryContext {
+        node: &node,
+        source,
+    };
     match query {
-        Query::Pattern(pattern) => matches_pattern(pattern, node, source),
+        Query::Pattern(pattern) => matches_pattern(pattern, &ctx),
         _ => todo!(),
     }
 }
 
-fn matches_pattern(pattern: &Pattern, node: Node, source: &str) -> bool {
-    if !matches_kind(&pattern.kind, node) {
+fn matches_pattern(pattern: &Pattern, ctx: &QueryContext) -> bool {
+    if !matches_kind(&pattern.kind, *ctx.node) {
         return false;
     }
     pattern
         .filters
         .iter()
-        .all(|filter| matches_filter(filter, node, source))
+        .all(|filter| matches_filter(filter, ctx))
 }
 
 fn matches_kind(kind: &Kind, node: Node) -> bool {
     match kind {
         Kind::Function => {
             node.kind() == "function_item"
+                || node.kind() == "function"
                 || node.kind() == "function_declaration"
                 || node.kind() == "function_definition"
         }
@@ -58,28 +68,45 @@ fn get_field_text(node: Node, field: &Field, source: &str) -> Option<String> {
     child.utf8_text(source.as_bytes()).ok().map(str::to_string)
 }
 
-fn matches_filter(filter: &Filter, node: Node, source: &str) -> bool {
-    let Some(text) = get_field_text(node, &filter.field, source) else {
+fn matches_filter(filter: &Filter, ctx: &QueryContext) -> bool {
+    let Some(text) = get_field_text(*ctx.node, &filter.field, ctx.source) else {
         return false;
     };
 
-    matches_predicate(&filter.predicate, &text)
+    matches_predicate(&filter.predicate, &text, ctx)
 }
 
-fn matches_predicate(predicate: &Predicate, text: &str) -> bool {
+fn matches_predicate(predicate: &Predicate, text: &str, ctx: &QueryContext) -> bool {
     match predicate {
         Predicate::Eq(value) => text == value,
-        Predicate::Like(value) => text.contains(value),
-        Predicate::Grep(value) => text.contains(value),
+        Predicate::ContainsText(value) => {
+            println!("Actual {} expcted {}", text, value.text);
+            text.contains(&value.text)
+        }
+        Predicate::ContainsPattern(pattern) => {
+            let mut cursor = ctx.node.walk();
+            ctx.node.children(&mut cursor).any(|c| {
+                /* println!(
+                    "Node {:?},\n pattern {:?}\n {:?}\n\n",
+                    &ctx.source[c.start_byte()..c.end_byte()],
+                    pattern,
+                    c.kind()
+                ); */
+                let sub_ctx = QueryContext {
+                    node: &c,
+                    source: ctx.source,
+                };
+                matches_pattern(pattern, &sub_ctx)
+            })
+        }
         Predicate::Matches(_) => todo!("regex crate"),
-        Predicate::Regex(_) => todo!("regex crate"),
         Predicate::Any(inner) => {
             // later: apply inner to children/items inside a field
-            matches_predicate(inner, text)
+            matches_predicate(inner, text, ctx)
         }
         Predicate::All(inner) => {
             // later
-            matches_predicate(inner, text)
+            matches_predicate(inner, text, ctx)
         }
     }
 }

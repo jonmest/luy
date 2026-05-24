@@ -2,11 +2,16 @@
 pub mod parser_pool;
 
 use crate::{
-    ir::{Field, Filter, Kind, Pattern, Predicate, Query},
+    ir::{ContainsText, Field, Filter, Kind, Pattern, Predicate, Query},
     lexer::Token,
 };
 use anyhow::{Error, Result, anyhow};
 use logos::Lexer;
+
+enum ParsedValue {
+    String(String),
+    Pattern(Pattern),
+}
 
 pub struct Parser<'source> {
     lexer: logos::Lexer<'source, Token>,
@@ -106,6 +111,7 @@ impl<'source> Parser<'source> {
                 self.advance();
                 Ok(Field::Body)
             }
+            Some(Ok(token)) => Err(anyhow!("invalid field {:?}", token)),
             _ => Err(anyhow!("invalid field")),
         }
     }
@@ -113,20 +119,19 @@ impl<'source> Parser<'source> {
     fn parse_predicate(&mut self) -> Result<Predicate> {
         let current = &self.current;
         match current {
-            Some(Ok(Token::Like)) => {
-                self.advance();
-                let value = self.parse_value()?;
-                Ok(Predicate::Like(value))
-            }
             Some(Ok(Token::Equals)) => {
                 self.advance();
-                let value = self.parse_value()?;
-                Ok(Predicate::Eq(value))
+                match self.parse_value()? {
+                    ParsedValue::String(value) => Ok(Predicate::Eq(value)),
+                    _ => Err(anyhow!("equals operator expects string value")),
+                }
             }
             Some(Ok(Token::Matches)) => {
                 self.advance();
-                let value = self.parse_value()?;
-                Ok(Predicate::Matches(value))
+                match self.parse_value()? {
+                    ParsedValue::String(value) => Ok(Predicate::Matches(value)),
+                    _ => Err(anyhow!("equals operator expects string value")),
+                }
             }
             Some(Ok(Token::Any)) => {
                 self.advance();
@@ -138,29 +143,34 @@ impl<'source> Parser<'source> {
                 let predicate = self.parse_predicate()?;
                 Ok(Predicate::All(Box::new(predicate)))
             }
-            Some(Ok(Token::Grep)) => {
+            Some(Ok(Token::Contains)) => {
                 self.advance();
-                let m = self.parse_value()?;
-                Ok(Predicate::Grep(m))
-            }
-            Some(Ok(Token::Regex)) => {
-                self.advance();
-                let regex_string = self.parse_value()?;
-                Ok(Predicate::Regex(regex_string))
+                match self.parse_value()? {
+                    ParsedValue::String(val) => Ok(Predicate::ContainsText(ContainsText {
+                        text: val,
+                        case_sensitive: true,
+                    })),
+                    ParsedValue::Pattern(pattern) => {
+                        Ok(Predicate::ContainsPattern(Box::new(pattern)))
+                    }
+                }
             }
             Some(t) => Err(anyhow!("expected predicate got {:?}", t)),
             _ => Err(anyhow!("expected predicate")),
         }
     }
 
-    fn parse_value(&mut self) -> Result<String> {
+    fn parse_value(&mut self) -> Result<ParsedValue> {
         match &self.current {
             Some(Ok(Token::String(value))) => {
                 let value = value.clone();
                 self.advance();
-                Ok(value)
+                Ok(ParsedValue::String(value))
             }
-            _ => Err(anyhow!("expected string")),
+            _ => {
+                let pattern = self.parse_pattern()?;
+                Ok(ParsedValue::Pattern(pattern))
+            }
         }
     }
 }

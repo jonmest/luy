@@ -44,14 +44,18 @@ pub struct Filter {
 }
 
 #[derive(Clone, Debug)]
+pub struct ContainsText {
+    pub case_sensitive: bool,
+    pub text: String,
+}
+
+#[derive(Clone, Debug)]
 pub enum Predicate {
     Eq(String),
-    Like(String),
     Matches(String),
+    ContainsText(ContainsText),
+    ContainsPattern(Box<Pattern>),
 
     Any(Box<Predicate>),
     All(Box<Predicate>),
-
-    Grep(String),
-    Regex(String),
 }

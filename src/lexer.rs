@@ -61,8 +61,7 @@ pub enum Token {
 
     #[token("matches")]
     Matches,
-    #[token("like")]
-    Like,
+
     #[token("any")]
     Any,
     #[token("all")]
@@ -71,10 +70,6 @@ pub enum Token {
     Count,
     #[token("contains")]
     Contains,
-    #[token("grep")]
-    Grep,
-    #[token("regex")]
-    Regex,
 
     #[regex(r#""([^"\\]|\\.)*""#, |lex| unquote(lex.slice()))]
     #[regex(r#"'([^'\\]|\\.)*'"#, |lex| unquote(lex.slice()))]
