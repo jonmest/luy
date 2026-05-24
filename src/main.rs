@@ -1,9 +1,9 @@
 mod core;
 
 use crate::core::{
+    language::{lang::Lang, spec_pool::LanguageSpecPool},
     lexer::Token,
-    parser::Parser as LuyParser,
-    parser::parser_pool::{Lang, ParserPool},
+    parser::{Parser as LuyParser, parser_pool::ParserPool},
     query::{query_engine::QueryEngine, walking_engine::WalkingEngine},
 };
 use anyhow::{Context, Result};
@@ -32,11 +32,11 @@ fn lang_for_path(path: &std::path::Path) -> Option<Lang> {
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    let mut spec_pool = LanguageSpecPool::new();
+
     let lexer = Token::lexer(&args.query);
     let mut query_parser = LuyParser::new(lexer);
     let query = query_parser.parse_query()?;
-
-    let engine = WalkingEngine {};
 
     let mut parsers = ParserPool::new();
 
@@ -53,6 +53,13 @@ fn main() -> Result<()> {
         }
         let lang = lang.unwrap();
 
+        let spec = spec_pool.spec_for(lang);
+        if spec.is_err() {
+            continue;
+        }
+        let spec = spec.unwrap();
+
+        let engine = WalkingEngine { spec };
         let source = std::fs::read_to_string(path)
             .with_context(|| format!("failed to read {}", path.display()))?;
 

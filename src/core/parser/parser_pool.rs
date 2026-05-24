@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use tree_sitter::Parser;
 
+use crate::core::language::lang::Lang;
+
 /*
 *
 * Store and reuse language-speicific parsers.
@@ -9,14 +11,6 @@ use tree_sitter::Parser;
 
 pub struct ParserPool {
     parsers: HashMap<Lang, Parser>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Lang {
-    Rust,
-    JavaScript,
-    TypeScript,
-    Tsx,
 }
 
 impl ParserPool {

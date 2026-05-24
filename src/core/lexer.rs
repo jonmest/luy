@@ -7,21 +7,25 @@ fn unquote(s: &str) -> String {
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t\f]+")]
 pub enum Token {
-    // entities
+    // kinds
     #[token("fn")]
     Fn,
     #[token("var")]
     Var,
     #[token("comment")]
     Comment,
-
-    // relations
-    #[token("in")]
-    In,
-    #[token("to")]
-    To,
-    #[token("before")]
-    Before,
+    #[token("call")]
+    Call,
+    #[token("param")]
+    Param,
+    #[token("arg")]
+    Arg,
+    #[token("string")]
+    String,
+    #[token("import")]
+    Import,
+    #[token("type")]
+    Type,
 
     // symbols
     #[token("{")]
@@ -33,21 +37,19 @@ pub enum Token {
     #[regex(r"\r?\n")]
     Newline,
 
-    // properties
+    // fields
     #[token("params")]
     Params,
-
     #[token("args")]
     Args,
-
     #[token("value")]
     Value,
-
     #[token("name")]
     Name,
-
     #[token("body")]
     Body,
+    #[token("returns")]
+    ReturnType,
 
     #[token("=")]
     Equals,
@@ -71,5 +73,5 @@ pub enum Token {
 
     #[regex(r#""([^"\\]|\\.)*""#, |lex| unquote(lex.slice()))]
     #[regex(r#"'([^'\\]|\\.)*'"#, |lex| unquote(lex.slice()))]
-    String(String),
+    Text(String),
 }

@@ -82,6 +82,34 @@ impl<'source> Parser<'source> {
                 self.advance();
                 Ok(Kind::Comment)
             }
+            Some(Ok(Token::Var)) => {
+                self.advance();
+                Ok(Kind::Var)
+            }
+            Some(Ok(Token::Call)) => {
+                self.advance();
+                Ok(Kind::Call)
+            }
+            Some(Ok(Token::Param)) => {
+                self.advance();
+                Ok(Kind::Param)
+            }
+            Some(Ok(Token::String)) => {
+                self.advance();
+                Ok(Kind::String)
+            }
+            Some(Ok(Token::Import)) => {
+                self.advance();
+                Ok(Kind::Import)
+            }
+            Some(Ok(Token::Arg)) => {
+                self.advance();
+                Ok(Kind::Arg)
+            }
+            Some(Ok(Token::Type)) => {
+                self.advance();
+                Ok(Kind::Type)
+            }
             _ => Err(anyhow!("invalid kind")),
         }
     }
@@ -133,6 +161,22 @@ impl<'source> Parser<'source> {
                 self.advance();
                 Ok(Field::Body)
             }
+            Some(Ok(Token::Type)) => {
+                self.advance();
+                Ok(Field::Type)
+            }
+            Some(Ok(Token::Args)) => {
+                self.advance();
+                Ok(Field::Args)
+            }
+            Some(Ok(Token::Value)) => {
+                self.advance();
+                Ok(Field::Value)
+            }
+            Some(Ok(Token::ReturnType)) => {
+                self.advance();
+                Ok(Field::ReturnType)
+            }
             Some(Ok(token)) => Err(FieldParsingError::NotField),
             _ => Err(FieldParsingError::InvalidToken),
         }
@@ -179,7 +223,7 @@ impl<'source> Parser<'source> {
 
     fn parse_value(&mut self) -> Result<ParsedValue> {
         match &self.current {
-            Some(Ok(Token::String(value))) => {
+            Some(Ok(Token::Text(value))) => {
                 let value = value.clone();
                 self.advance();
                 Ok(ParsedValue::String(value))

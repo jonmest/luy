@@ -11,6 +11,13 @@ pub enum Kind {
     Function,
     Var,
     Comment,
+
+    Call,
+    Param,
+    Arg,
+    String,
+    Import,
+    Type,
 }
 
 #[derive(Clone, Debug)]
@@ -19,7 +26,16 @@ pub enum Field {
     Name,
     Body,
     Params,
-    Arg,
+    Args,
+    Type,
+    ReturnType,
+
+    Value,
+    Receiver,
+
+    Path,
+
+    Condition,
 }
 
 #[derive(Clone, Debug)]
