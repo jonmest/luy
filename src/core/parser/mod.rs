@@ -56,9 +56,18 @@ impl<'source> Parser<'source> {
 
     fn parse_pattern(&mut self) -> Result<Pattern> {
         let kind = self.parse_kind()?;
-        self.expect(Token::LeftBrace)?;
-        let filters = self.parse_filters()?;
-        self.expect(Token::RightBrace)?;
+
+        let filters = if matches!(self.current, Some(Ok(Token::LeftBrace))) {
+            self.advance();
+            let filters = self.parse_filters()?;
+            self.expect(Token::RightBrace)?;
+            filters
+        } else if self.current.is_some() {
+            vec![self.parse_filter()?]
+        } else {
+            vec![]
+        };
+
         Ok(Pattern { kind, filters })
     }
 
