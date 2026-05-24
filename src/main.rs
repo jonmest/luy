@@ -1,10 +1,8 @@
-mod ir;
-mod lexer;
-mod parser;
-mod query;
+mod core;
 
-use crate::{
+use crate::core::{
     lexer::Token,
+    parser::Parser as LuyParser,
     parser::parser_pool::{Lang, ParserPool},
     query::{query_engine::QueryEngine, walking_engine::WalkingEngine},
 };
@@ -35,7 +33,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let lexer = Token::lexer(&args.query);
-    let mut query_parser = crate::parser::Parser::new(lexer);
+    let mut query_parser = LuyParser::new(lexer);
     let query = query_parser.parse_query()?;
 
     let engine = WalkingEngine {};

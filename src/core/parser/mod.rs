@@ -1,7 +1,7 @@
 #![allow(unused)]
 pub mod parser_pool;
 
-use crate::{
+use crate::core::{
     ir::{ContainsText, Field, Filter, Kind, Pattern, Predicate, Query},
     lexer::Token,
 };

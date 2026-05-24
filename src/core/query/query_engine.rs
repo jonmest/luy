@@ -22,7 +22,7 @@ use logos::Span;
 */
 use tree_sitter::{Node, Tree};
 
-use crate::ir::{Filter, Kind, Pattern, Predicate, Query};
+use crate::core::ir::{Filter, Kind, Pattern, Predicate, Query};
 
 #[derive(Debug)]
 pub struct Match {

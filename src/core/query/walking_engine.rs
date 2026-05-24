@@ -1,6 +1,6 @@
 use tree_sitter::{Node, Tree};
 
-use crate::{
+use crate::core::{
     ir::{Field, Filter, Kind, Pattern, Predicate, Query},
     query::query_engine::{Match, QueryEngine},
 };
@@ -123,7 +123,7 @@ fn matches_predicate(predicate: &Predicate, node: Node, ctx: &QueryContext) -> b
 
     match predicate {
         Predicate::Eq(value) => &text == value,
-        Predicate::ContainsText(value) => text.contains(&value.text),
+        Predicate::ContainsText(value) => contains_text(&node, &value.text, ctx),
         Predicate::ContainsPattern(pattern) => contains_pattern(node, pattern, ctx.source),
         Predicate::Matches(_) => todo!("regex crate"),
         Predicate::All(inner) => {
