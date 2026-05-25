@@ -7,6 +7,7 @@ use crate::core::{
 };
 use anyhow::{Error, Result, anyhow};
 use logos::Lexer;
+use regex::Regex;
 
 enum ParsedValue {
     String(String),
@@ -199,15 +200,11 @@ impl<'source> Parser<'source> {
             Some(Ok(Token::Matches)) => {
                 self.advance();
                 match self.parse_value()? {
-                    ParsedValue::String(value) => Ok(Predicate::Matches(value)),
+                    ParsedValue::String(value) => Ok(Predicate::Matches(Regex::new(&value)?)),
                     _ => Err(anyhow!("equals operator expects string value")),
                 }
             }
-            Some(Ok(Token::All)) => {
-                self.advance();
-                let predicate = self.parse_predicate()?;
-                Ok(Predicate::All(Box::new(predicate)))
-            }
+
             Some(Ok(Token::Contains)) => {
                 self.advance();
                 match self.parse_value()? {

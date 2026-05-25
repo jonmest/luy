@@ -1,3 +1,4 @@
+use regex::Regex;
 use tree_sitter::{Node, Tree};
 
 use crate::core::{
@@ -117,6 +118,14 @@ impl<'a, 'b> WalkingEngine<'a, 'b> {
         )
     }
 
+    fn matches_regex(&self, regex: &Regex, ctx: &Context) -> bool {
+        let Some(text) = self.get_node_text(ctx) else {
+            return false;
+        };
+
+        regex.is_match(&text)
+    }
+
     fn matches_predicate(&self, predicate: &Predicate, ctx: &Context) -> bool {
         let Some(text) = self.get_node_text(ctx) else {
             return false;
@@ -126,11 +135,7 @@ impl<'a, 'b> WalkingEngine<'a, 'b> {
             Predicate::Eq(value) => &text == value,
             Predicate::ContainsText(value) => self.contains_text(&value.text, ctx),
             Predicate::ContainsPattern(pattern) => self.contains_pattern(pattern, ctx),
-            Predicate::Matches(_) => todo!("regex crate"),
-            Predicate::All(inner) => {
-                // later
-                self.matches_predicate(inner, ctx)
-            }
+            Predicate::Matches(regex) => self.matches_regex(regex, ctx),
         }
     }
 

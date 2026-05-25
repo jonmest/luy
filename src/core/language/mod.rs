@@ -1,4 +1,3 @@
-pub mod js_spec;
 pub mod lang;
 pub mod language_spec;
 pub mod rust_spec;

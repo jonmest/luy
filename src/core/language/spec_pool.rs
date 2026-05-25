@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use crate::core::language::{
-    js_spec::JavaScriptSpec, lang::Lang, language_spec::LanguageSpec, rust_spec::RustSpec,
-    ts_spec::TypeScriptSpec,
+    lang::Lang, language_spec::LanguageSpec, rust_spec::RustSpec, ts_spec::TypeScriptSpec,
 };
 
 /*
@@ -25,7 +24,6 @@ impl<'a> LanguageSpecPool<'a> {
         if let std::collections::hash_map::Entry::Vacant(e) = self.spec.entry(lang) {
             let spec: &'a dyn LanguageSpec = match lang {
                 Lang::Rust => &RustSpec {},
-                Lang::JavaScript => &JavaScriptSpec {},
                 Lang::TypeScript => &TypeScriptSpec {},
                 _ => todo!(),
             };

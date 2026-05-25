@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use regex::Regex;
+
 /**
 * Behold, the Luy Intermediate Representation (LIR).
 * Luy takes a user's query and converts it into LIR
@@ -41,11 +43,6 @@ pub enum Field {
 #[derive(Clone, Debug)]
 pub enum Query {
     Pattern(Pattern),
-    Not(Box<Query>),
-    And(Box<Query>, Box<Query>),
-    Or(Box<Query>, Box<Query>),
-    In(Box<Query>, Box<Query>),
-    To(Box<Query>, Box<Query>),
 }
 
 #[derive(Clone, Debug)]
@@ -69,8 +66,7 @@ pub struct ContainsText {
 #[derive(Clone, Debug)]
 pub enum Predicate {
     Eq(String),
-    Matches(String),
+    Matches(Regex),
     ContainsText(ContainsText),
     ContainsPattern(Box<Pattern>),
-    All(Box<Predicate>),
 }

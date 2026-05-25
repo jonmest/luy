@@ -225,4 +225,31 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn fn_body_matches() -> Result<()> {
+        let query = r#"fn { params matches "kin:\s\w" }"#;
+        let source = r#"
+            // Hello world!
+            // Foo Bar
+            async function main(in: Arg): Promise<void> {
+                return Promise.resolve(() => console.log("Hello world!"));
+            }
+
+            function slain(kin: Slarg): droid {
+                console.log("needle");
+            }
+        "#;
+
+        let matches = typescript_helper(query, source)?;
+
+        assert_eq!(matches.len(), 1);
+        assert_eq!(
+            matches.first().unwrap().text,
+            r#"function slain(kin: Slarg): droid {
+                console.log("needle");
+            }"#
+        );
+        Ok(())
+    }
 }

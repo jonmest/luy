@@ -285,6 +285,7 @@ dependencies = [
  "clap",
  "ignore",
  "logos",
+ "regex",
  "tree-sitter",
  "tree-sitter-javascript",
  "tree-sitter-rust",

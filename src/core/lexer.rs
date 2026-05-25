@@ -55,23 +55,10 @@ pub enum Token {
 
     #[token("=")]
     Equals,
-
-    #[token("not")]
-    Not,
-    #[token("and")]
-    And,
-    #[token("or")]
-    Or,
-
     #[token("matches")]
     Matches,
     #[token("contains")]
     Contains,
-
-    #[token("all")]
-    All,
-    #[token("count")]
-    Count,
 
     #[regex(r#""([^"\\]|\\.)*""#, |lex| unquote(lex.slice()))]
     #[regex(r#"'([^'\\]|\\.)*'"#, |lex| unquote(lex.slice()))]
