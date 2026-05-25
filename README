@@ -1,0 +1,30 @@
+LUY: SEMANTIC CODE GREP
+-----------------------
+
+Luy is a structured query language for code. It allows you to mix structured patterns and free-text search.
+
+How does it differ from:
+    - Grep: Luy traverses the AST of your code and is more semantically aware.
+    - Semgrep: Not sure. I'm hoping to turn his into something more flexible and lightweight used to quickly get insights into a codebase as opposed to setting up cringe rules. Moreover, this is more a fun side project than anything else.
+
+-----------------------
+
+The language:
+
+KINDS
+Kinds are the primitives of a programming language such as functions, variables, comments, calls, and more.
+
+PATTERNS
+Patterns are, well, patterns that you query. For the entity "comment" you can do:
+
+    comment contains "TODO"
+
+For the entity "function":
+    
+    fn { params contains "birthDate"}
+    fn { returns contains "Promise<void>" }
+
+-----------------------
+
+Documentation is incomplete, so is the implementation. The project is based on Tree-Sitter and should be easily extended with dialects for different languages, but at the moment I'm playing around with Typescript and Rust.
+
