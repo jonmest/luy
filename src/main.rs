@@ -59,7 +59,7 @@ fn main() -> Result<()> {
         }
         let spec = spec.unwrap();
 
-        let engine = WalkingEngine { spec };
+        let engine = WalkingEngine::new(spec, &query);
         let source = std::fs::read_to_string(path)
             .with_context(|| format!("failed to read {}", path.display()))?;
 
@@ -69,7 +69,7 @@ fn main() -> Result<()> {
             .parse(&source, None)
             .context("tree-sitter failed to parse source")?;
 
-        let matches = engine.run(&query, &tree, &source);
+        let matches = engine.run(&tree, &source);
 
         for m in matches {
             println!(

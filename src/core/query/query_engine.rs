@@ -22,7 +22,10 @@ use logos::Span;
 */
 use tree_sitter::{Node, Tree};
 
-use crate::core::ir::{Filter, Kind, Pattern, Predicate, Query};
+use crate::core::{
+    ir::{Filter, Kind, Pattern, Predicate, Query},
+    language::language_spec::LanguageSpec,
+};
 
 #[derive(Debug)]
 pub struct Match {
@@ -34,6 +37,7 @@ pub struct Match {
     pub text: String,
 }
 
-pub trait QueryEngine {
-    fn run(&self, query: &Query, tree: &Tree, source: &str) -> Vec<Match>;
+pub trait QueryEngine<'a, 'b> {
+    fn new(spec: &'a dyn LanguageSpec, query: &'b Query) -> Self;
+    fn run(&self, tree: &Tree, source: &str) -> Vec<Match>;
 }
