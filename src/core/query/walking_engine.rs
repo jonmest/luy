@@ -1,7 +1,7 @@
 use tree_sitter::{Node, Tree};
 
 use crate::core::{
-    ir::{Field, Filter, Pattern, Predicate, Query},
+    ir::{Field, Filter, Kind, Pattern, Predicate, Query},
     language::language_spec::LanguageSpec,
     query::query_engine::{Match, QueryEngine},
 };
@@ -100,11 +100,11 @@ impl<'a, 'b> WalkingEngine<'a, 'b> {
         pattern
             .filters
             .iter()
-            .all(|filter| self.matches_filter(filter, ctx))
+            .all(|filter| self.matches_filter(filter, &pattern.kind, ctx))
     }
 
-    fn matches_filter(&self, filter: &Filter, ctx: &Context) -> bool {
-        let Some(field_node) = self.get_field_node(ctx.node, &filter.field) else {
+    fn matches_filter(&self, filter: &Filter, kind: &Kind, ctx: &Context) -> bool {
+        let Some(field_node) = self.get_field_node(ctx.node, kind, &filter.field) else {
             return false;
         };
 
@@ -140,14 +140,23 @@ impl<'a, 'b> WalkingEngine<'a, 'b> {
      *
      */
 
-    fn get_field_node<'tree>(&self, node: Node<'tree>, field: &Field) -> Option<Node<'tree>> {
-        match field {
-            Field::Name => node.child_by_field_name("name"),
-            Field::Params => node.child_by_field_name("parameters"),
-            Field::Body => node.child_by_field_name("body"),
-            Field::Self_ => Some(node),
-            _ => None,
+    fn get_field_node<'tree>(
+        &self,
+        node: Node<'tree>,
+        kind: &Kind,
+        field: &Field,
+    ) -> Option<Node<'tree>> {
+        if matches!(field, Field::Self_) {
+            return Some(node);
         }
+
+        let field_names = self.spec.field_names(kind, field);
+        for item in field_names {
+            if let Some(child) = node.child_by_field_name(item) {
+                return Some(child);
+            };
+        }
+        None
     }
 
     fn get_node_text(&self, ctx: &Context) -> Option<String> {
