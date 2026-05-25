@@ -50,6 +50,8 @@ pub enum Token {
     Body,
     #[token("returns")]
     ReturnType,
+    #[token("receiver")]
+    Receiver,
 
     #[token("=")]
     Equals,

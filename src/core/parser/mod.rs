@@ -173,6 +173,10 @@ impl<'source> Parser<'source> {
                 self.advance();
                 Ok(Field::Value)
             }
+            Some(Ok(Token::Receiver)) => {
+                self.advance();
+                Ok(Field::Receiver)
+            }
             Some(Ok(Token::ReturnType)) => {
                 self.advance();
                 Ok(Field::ReturnType)

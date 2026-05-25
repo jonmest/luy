@@ -1,5 +1,3 @@
-use tree_sitter::Node;
-
 use crate::core::ir::{Field, Kind};
 
 pub trait LanguageSpec {
